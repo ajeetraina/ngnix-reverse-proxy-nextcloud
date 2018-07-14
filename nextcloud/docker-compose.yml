@@ -1,0 +1,33 @@
+version: '2'
+services:
+  nextcloud:
+    image: nextcloud:fpm
+    container_name: nextcloud
+    links:
+      - db
+    volumes:
+      - /mnt/server/nextcloud:/var/www/html/nextcloud/
+      - /mnt/server/nextcloud/apps:/var/www/html/nextcloud/apps/
+      - /mnt/server/nextcloud/config:/var/www/html/nextcloud/config/
+      - /mnt/server/nextcloud/data:/var/www/html/nextcloud/data/
+    networks:
+      - proxy-tier
+    restart: always
+
+  db:
+    image: postgres
+    container_name: db
+    volumes:
+      - /mnt/server/nextcloud/db:/var/lib/postgresql/
+    environment:
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=nextcloud
+      - POSTGRES_PASSWORD=somepassword
+    networks:
+      - proxy-tier
+    restart: always
+
+networks:
+  proxy-tier:
+    external:
+      name: nginx-proxy
