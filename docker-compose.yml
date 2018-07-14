@@ -1,0 +1,51 @@
+version: '2'
+services:
+  proxy:
+    image: jwilder/nginx-proxy
+    container_name: proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /mnt/server/proxy/conf.d:/etc/nginx/conf.d
+      - /mnt/server/proxy/vhost.d:/etc/nginx/vhost.d
+      - /mnt/server/proxy/html:/usr/share/nginx/html
+      - /mnt/server/proxy/certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy-tier
+    restart: always
+
+  letsencrypt-companion:
+    image: alastaircoote/docker-letsencrypt-nginx-proxy-companion
+    container_name: letsencrypt-companion
+    volumes_from:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /mnt/server/proxy/certs:/etc/nginx/certs:rw
+    restart: always
+
+  web:
+    # image: nginx:alpine
+    image: nginx
+    container_name: nginx-webserver
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /mnt/server/nextcloud:/var/www/html/nextcloud/
+    external_links:
+      - nextcloud
+    environment:
+      - VIRTUAL_HOST=my-server.com
+      - VIRTUAL_NETWORK=nginx-proxy
+      - VIRTUAL_PORT=80
+      - LETSENCRYPT_HOST=my-server.com
+      - LETSENCRYPT_EMAIL=myemail@google.com
+    networks:
+      - proxy-tier
+    restart: always
+
+networks:
+  proxy-tier:
+    external:
+      name: nginx-proxy
