@@ -2,8 +2,8 @@ wordpress:
   image: wordpress
   links:
     - db:mysql
-  expose:
-    - 80
+  ports:
+    - 80:80
   environment:
     - "VIRTUAL_HOST=blog.domain.com"
 db:  
